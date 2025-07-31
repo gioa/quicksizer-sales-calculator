@@ -131,14 +131,34 @@ function App() {
 
           <TabsContent value="results">
             {costResult ? (
-              <div className="max-w-6xl mx-auto space-y-6">
+              <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-900">💰 Cost Estimation Results</h2>
                   <Button onClick={handleNewCalculation} variant="outline">
                     New Calculation
                   </Button>
                 </div>
-                <CostEstimationDisplay costResult={costResult} />
+                
+                {/* 2-column layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left column: Questionnaire inputs (read-only) */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">📋 Assessment Summary</h3>
+                    <QuestionnaireForm 
+                      sessionId={costResult.questionnaire.session_id}
+                      onSubmitSuccess={() => {}}
+                      isLoading={false}
+                      readOnly={true}
+                      initialData={costResult.questionnaire}
+                    />
+                  </div>
+                  
+                  {/* Right column: Cost estimation results */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">💰 Cost Breakdown</h3>
+                    <CostEstimationDisplay costResult={costResult} />
+                  </div>
+                </div>
               </div>
             ) : (
               <Card className="max-w-2xl mx-auto">
