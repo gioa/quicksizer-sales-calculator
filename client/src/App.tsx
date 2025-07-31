@@ -1,19 +1,23 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calculator, FileText, BarChart3 } from 'lucide-react';
+import { Calculator, FileText, BarChart3, Menu, X, Wrench } from 'lucide-react';
 import { trpc } from '@/utils/trpc';
 import { QuestionnaireForm } from '@/components/QuestionnaireForm';
 import { CostEstimationDisplay } from '@/components/CostEstimationDisplay';
 import { AdminDashboard } from '@/components/AdminDashboard';
+import { AnotherCalculator } from '@/components/AnotherCalculator';
 // Using type-only imports
 import type { CostCalculationResult, QuestionnaireResponse } from '../../server/src/schema';
+
+type ActiveCalculator = 'quicksizer' | 'another';
 
 function App() {
   const [sessionId, setSessionId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('questionnaire');
+  const [activeCalculator, setActiveCalculator] = useState<ActiveCalculator>('quicksizer');
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [costResult, setCostResult] = useState<CostCalculationResult | null>(null);
   const [questionnaires, setQuestionnaires] = useState<QuestionnaireResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +67,19 @@ function App() {
     setActiveTab('questionnaire');
   };
 
-  return (
+  const handleCalculatorSwitch = (calculator: ActiveCalculator) => {
+    setActiveCalculator(calculator);
+    // Reset state when switching calculators
+    if (calculator === 'quicksizer') {
+      handleNewCalculation();
+    }
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const renderQuicksizer = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -142,6 +158,83 @@ function App() {
             />
           </TabsContent>
         </Tabs>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className={`bg-white shadow-lg transition-all duration-300 ease-in-out ${
+        sidebarOpen ? 'w-64' : 'w-16'
+      } flex flex-col`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            {sidebarOpen && (
+              <h2 className="text-lg font-semibold text-gray-800">Calculators</h2>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              className="p-1 hover:bg-gray-100"
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 p-4">
+          <div className="space-y-2">
+            {/* Quicksizer Calculator */}
+            <button
+              onClick={() => handleCalculatorSwitch('quicksizer')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                activeCalculator === 'quicksizer'
+                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Calculator className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && (
+                <span className="font-medium">Quicksizer Calculator</span>
+              )}
+            </button>
+
+            {/* Another Calculator */}
+            <button
+              onClick={() => handleCalculatorSwitch('another')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                activeCalculator === 'another'
+                  ? 'bg-green-100 text-green-700 border-2 border-green-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Wrench className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && (
+                <span className="font-medium">Another Calculator</span>
+              )}
+            </button>
+          </div>
+        </nav>
+
+        {/* Sidebar Footer */}
+        {sidebarOpen && (
+          <div className="p-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 text-center">
+              Sales & Engineering Tools
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full overflow-y-auto">
+          {activeCalculator === 'quicksizer' ? renderQuicksizer() : <AnotherCalculator />}
+        </div>
       </div>
     </div>
   );
