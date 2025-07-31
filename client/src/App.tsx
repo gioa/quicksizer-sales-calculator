@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calculator, FileText, BarChart3, Menu, X, Wrench } from 'lucide-react';
+import { Calculator, BarChart3, Menu, X, Wrench } from 'lucide-react';
 import { trpc } from '@/utils/trpc';
 import { QuestionnaireForm } from '@/components/QuestionnaireForm';
 import { CostEstimationDisplay } from '@/components/CostEstimationDisplay';
@@ -11,11 +10,10 @@ import { AnotherCalculator } from '@/components/AnotherCalculator';
 // Using type-only imports
 import type { CostCalculationResult, QuestionnaireResponse } from '../../server/src/schema';
 
-type ActiveCalculator = 'quicksizer' | 'another';
+type ActiveCalculator = 'quicksizer' | 'another' | 'admin';
 
 function App() {
   const [sessionId, setSessionId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('questionnaire');
   const [activeCalculator, setActiveCalculator] = useState<ActiveCalculator>('quicksizer');
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [costResult, setCostResult] = useState<CostCalculationResult | null>(null);
@@ -49,7 +47,6 @@ function App() {
       const result = await trpc.getCostCalculationResult.query({ session_id: sessionId });
       if (result) {
         setCostResult(result);
-        setActiveTab('results');
         // Reload questionnaires for admin view
         await loadAllQuestionnaires();
       }
@@ -64,7 +61,6 @@ function App() {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setSessionId(newSessionId);
     setCostResult(null);
-    setActiveTab('questionnaire');
   };
 
   const handleCalculatorSwitch = (calculator: ActiveCalculator) => {
@@ -91,93 +87,69 @@ function App() {
           <p className="text-xl text-gray-600">
             Internal tool for Sales & Field Engineering teams to provide instant customer cost estimates
           </p>
+          {costResult && (
+            <div className="mt-4">
+              <Button onClick={handleNewCalculation} variant="outline" size="lg">
+                New Calculation
+              </Button>
+            </div>
+          )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="questionnaire" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              New Assessment
-            </TabsTrigger>
-            <TabsTrigger value="results" className="flex items-center gap-2" disabled={!costResult}>
-              <Calculator className="w-4 h-4" />
-              Cost Estimation
-            </TabsTrigger>
-            <TabsTrigger value="admin" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Admin Dashboard
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="questionnaire">
-            <Card className="max-w-4xl mx-auto">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Customer Requirements Assessment</CardTitle>
-                <CardDescription>
-                  Complete this questionnaire to generate an instant cost estimate for your customer
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {sessionId && (
-                  <QuestionnaireForm 
-                    sessionId={sessionId}
-                    onSubmitSuccess={handleQuestionnaireSubmit}
-                    isLoading={isLoading}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="results">
+        {/* 2-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          {/* Left Column */}
+          <div className="space-y-4">
             {costResult ? (
-              <div className="max-w-7xl mx-auto space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-gray-900">💰 Cost Estimation Results</h2>
-                  <Button onClick={handleNewCalculation} variant="outline">
-                    New Calculation
-                  </Button>
-                </div>
-                
-                {/* 2-column layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left column: Questionnaire inputs (read-only) */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">📋 Assessment Summary</h3>
-                    <QuestionnaireForm 
-                      sessionId={costResult.questionnaire.session_id}
-                      onSubmitSuccess={() => {}}
-                      isLoading={false}
-                      readOnly={true}
-                      initialData={costResult.questionnaire}
-                    />
-                  </div>
-                  
-                  {/* Right column: Cost estimation results */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">💰 Cost Breakdown</h3>
-                    <CostEstimationDisplay costResult={costResult} />
-                  </div>
-                </div>
-              </div>
+              <>
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">📋 Assessment Inputs</h3>
+                <QuestionnaireForm 
+                  sessionId={costResult.questionnaire.session_id}
+                  onSubmitSuccess={() => {}}
+                  isLoading={false}
+                  readOnly={true}
+                  initialData={costResult.questionnaire}
+                />
+              </>
             ) : (
-              <Card className="max-w-2xl mx-auto">
-                <CardContent className="text-center py-12">
-                  <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">No Results Yet</h3>
-                  <p className="text-gray-500">Complete the questionnaire to see cost estimation results</p>
+              <Card className="max-w-4xl">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl">Customer Requirements Assessment</CardTitle>
+                  <CardDescription>
+                    Complete this questionnaire to generate an instant cost estimate for your customer
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sessionId && (
+                    <QuestionnaireForm 
+                      sessionId={sessionId}
+                      onSubmitSuccess={handleQuestionnaireSubmit}
+                      isLoading={isLoading}
+                    />
+                  )}
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value="admin">
-            <AdminDashboard 
-              questionnaires={questionnaires}
-              onRefresh={loadAllQuestionnaires}
-            />
-          </TabsContent>
-        </Tabs>
+          </div>
+          
+          {/* Right Column */}
+          <div className="space-y-4">
+            {costResult ? (
+              <>
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">💰 Cost Estimation Breakdown</h3>
+                <CostEstimationDisplay costResult={costResult} />
+              </>
+            ) : (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 mb-2">Your Estimated Costs</h3>
+                  <p className="text-gray-500">Your estimated costs will appear here after you fill out the questionnaire and click 'Generate Cost Estimate'.</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -237,6 +209,21 @@ function App() {
                 <span className="font-medium">Another Calculator</span>
               )}
             </button>
+
+            {/* Admin Dashboard */}
+            <button
+              onClick={() => handleCalculatorSwitch('admin')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                activeCalculator === 'admin'
+                  ? 'bg-purple-100 text-purple-700 border-2 border-purple-200'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && (
+                <span className="font-medium">Admin Dashboard</span>
+              )}
+            </button>
           </div>
         </nav>
 
@@ -253,7 +240,18 @@ function App() {
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto">
-          {activeCalculator === 'quicksizer' ? renderQuicksizer() : <AnotherCalculator />}
+          {activeCalculator === 'quicksizer' && renderQuicksizer()}
+          {activeCalculator === 'another' && <AnotherCalculator />}
+          {activeCalculator === 'admin' && (
+            <div className="min-h-screen bg-gray-50">
+              <div className="container mx-auto px-4 py-8">
+                <AdminDashboard 
+                  questionnaires={questionnaires}
+                  onRefresh={loadAllQuestionnaires}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -15,8 +15,8 @@ interface QuestionnaireFormProps {
   sessionId: string;
   onSubmitSuccess: () => void;
   isLoading?: boolean;
-  readOnly?: boolean;
-  initialData?: QuestionnaireResponse;
+  readOnly?: boolean; // New prop to indicate read-only mode
+  initialData?: QuestionnaireResponse; // New prop to supply data in read-only mode
 }
 
 const FUNCTIONALITY_OPTIONS = [
@@ -39,6 +39,7 @@ const INDUSTRY_OPTIONS = [
 export function QuestionnaireForm({ sessionId, onSubmitSuccess, isLoading = false, readOnly = false, initialData }: QuestionnaireFormProps) {
   const [formData, setFormData] = useState<CreateQuestionnaireInput>(() => {
     if (readOnly && initialData) {
+      // Map initialData (QuestionnaireResponse) to CreateQuestionnaireInput fields for display
       return {
         session_id: initialData.session_id,
         company_name: initialData.company_name,
@@ -50,9 +51,10 @@ export function QuestionnaireForm({ sessionId, onSubmitSuccess, isLoading = fals
         monthly_data_volume_gb: initialData.monthly_data_volume_gb,
         concurrent_users: initialData.concurrent_users,
         compliance_requirements: initialData.compliance_requirements,
-        high_availability_needed: initialData.high_availability_needed
+        high_availability_needed: initialData.high_availability_needed,
       };
     }
+    // Existing default values for editable form
     return {
       session_id: sessionId,
       company_name: null,
@@ -64,7 +66,7 @@ export function QuestionnaireForm({ sessionId, onSubmitSuccess, isLoading = fals
       monthly_data_volume_gb: 100,
       concurrent_users: 50,
       compliance_requirements: false,
-      high_availability_needed: false
+      high_availability_needed: false,
     };
   });
 
